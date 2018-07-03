@@ -9,9 +9,14 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel, info
 from mininet.link import TCLink, Intf
 from subprocess import call
+from time import sleep
+from os import system
 
+cores = [2, 3, 4, 5, 6, 7]
+add_load = True
 def myNetwork():
 
+    setLogLevel('debug')
     net = Mininet( topo=None,
                    build=False,
                    ipBase='10.0.0.0/8')
@@ -22,30 +27,33 @@ def myNetwork():
     s2 = net.addSwitch('s2', cls=OVSKernelSwitch, failMode='standalone')
 
     info( '*** Add hosts\n')
-    h6 = net.addHost('h6', cls=CPULimitedHost, ip='10.0.0.6', defaultRoute=None)
-    h6.setCPUs(cores=7)
-    h6.setCPUFrac(f=20.0, sched='host')
+
+    h1 = net.addHost('h1', cls=CPULimitedHost, ip='10.0.0.1', defaultRoute=None)
+    h1.setCPUs(cores=cores[0])
+    h1.setCPUFrac(f=20.0, sched='host')
+
+    h2 = net.addHost('h2', cls=CPULimitedHost, ip='10.0.0.2', defaultRoute=None)
+    h2.setCPUs(cores=cores[1])
+    h2.setCPUFrac(f=20.0, sched='host')
+
+    h3 = net.addHost('h3', cls=CPULimitedHost, ip='10.0.0.3', defaultRoute=None)
+    h3.setCPUs(cores=cores[2])
+    h3.setCPUFrac(f=20.0, sched='host')
 
     h4 = net.addHost('h4', cls=CPULimitedHost, ip='10.0.0.4', defaultRoute=None)
-    h4.setCPUs(cores=5)
+    h4.setCPUs(cores=cores[3])
     h4.setCPUFrac(f=20.0, sched='host')
 
     h5 = net.addHost('h5', cls=CPULimitedHost, ip='10.0.0.5', defaultRoute=None)
-    h5.setCPUs(cores=6)
+    h5.setCPUs(cores=cores[4])
     h5.setCPUFrac(f=20.0, sched='host')
 
+    h6 = net.addHost('h6', cls=CPULimitedHost, ip='10.0.0.6', defaultRoute=None)
+    h6.setCPUs(cores=cores[5])
+    h6.setCPUFrac(f=20.0, sched='host')
 
-    h2 = net.addHost('h2', cls=CPULimitedHost, ip='10.0.0.2', defaultRoute=None)
-    h2.setCPUs(cores=3)
-    h2.setCPUFrac(f=20.0, sched='host')
 
-    h1 = net.addHost('h1', cls=CPULimitedHost, ip='10.0.0.1', defaultRoute=None)
-    h1.setCPUs(cores=2)
-    h1.setCPUFrac(f=20.0, sched='host')
 
-    h3 = net.addHost('h3', cls=CPULimitedHost, ip='10.0.0.3', defaultRoute=None)
-    h3.setCPUs(cores=4)
-    h3.setCPUFrac(f=20.0, sched='host')
 
     h1s1 = {'bw':10}
     net.addLink(h1, s1, cls=TCLink , **h1s1)
@@ -90,11 +98,23 @@ def myNetwork():
     info( '*** Post configure switches and hosts\n')
 
     capture.sendCmd('./capture.sh '+(' '.join(interfaces)))
+    h6.cmd('python -m SimpleHTTPServer 80 &')
+    
+    sleep(5)
+    info( '*** Generating traffic \n')
+    if add_load:
+        for host_i in range(6):
+	    for host_j in range(6):
+		command = 'taskset -c ' + str(cores[host_i]) + ' ping -i 0.01 ' + str(net.hosts[host_j].IP()) + " | awk '{print \"" + str(net.hosts[host_i].IP()) + "\",$4, $6, $7 }' > data/ping_" + str(host_i) + '_' + str(host_j) + '.data &'
+		info("Command "+command+"\n")
+    		result=net.hosts[host_i].cmd(command)
 
-#    CLI(net)
-    [net.pingFull([h1,h2]) for i in range(2000)]
 
-    h1.cmd('curl '+h2.IP())
+    [h1.cmd('nc '+h6.IP()+' 80 < message &') for i in range(5000)]
+    info( '*** End of tests\n')
+
+    sleep(15)
+    system('killall -9 ping; killall -9 nc')
     capture.sendInt()
     net.stop()
 
