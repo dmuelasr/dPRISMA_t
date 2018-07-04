@@ -48,7 +48,9 @@ while [ $l -le $N_REP ]; do
 		sleep 5
 	fi
 
-	taskset -c 4 python test_jackson.py
+	taskset -c 4 python ../topo/test_jackson.py;
+
+	sleep 5
 
 	# Kill subprocesses
 	echo_log "INFO" "Cleaning subprocesses..."
