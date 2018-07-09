@@ -1,2 +1,5 @@
-traces/n*
+traces_congestion/*
+scripts/log/*
+multihop-tools
+traces/*
 *.swp

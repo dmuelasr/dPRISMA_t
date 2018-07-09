@@ -48,7 +48,7 @@ while [ $l -le $N_REP ]; do
 		sleep 5
 	fi
 
-	taskset -c 4 python ../topo/test_jackson.py;
+	taskset -c 4 python ../topo/test_jackson_nocong.py;
 
 	sleep 5
 

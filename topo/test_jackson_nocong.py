@@ -110,7 +110,7 @@ def myNetwork():
     		result=net.hosts[host_i].cmd(command)
 
 
-    [h1.cmd('echo "12345" | nc '+h6.IP()+' 80 &') for i in range(5000)]
+    [h1.cmd('echo "12345" | nc '+h6.IP()+' 80') for i in range(5000)]
     info( '*** End of tests\n')
 
     sleep(15)

@@ -1,4 +1,5 @@
 #!/bin/bash
+now=$(date +%s)
 killtree() {
     local _pid=$1
     local _sig=${2:--TERM}
@@ -12,8 +13,8 @@ trap "{ killtree($$) ; wait ; exit 255; }" SIGINT
 echo '' > log
 for intf in "$@"
 do
-    output=traces/$intf".pcap"
+    output=../traces/$intf"_"$now".pcap"
     echo $output >> log
-    tcpdump -i $intf -w $output -s 200 & >> log
+    tcpdump -i $intf -w $output -s 200 "tcp[tcpflags] & (tcp-syn) != 0" & >> log
 done
 wait
